@@ -6,7 +6,7 @@ import {
 } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import type { BoschBike } from "@/types/bosch";
-import { getBatteryCapacity, getWhPerKm, estimateCurrentCharge } from "@/lib/battery";
+import { getBatteryCapacity, getWhPerKm } from "@/lib/battery";
 
 interface BatteryCardProps {
   bike: BoschBike;
@@ -20,13 +20,17 @@ export function BatteryCard({ bike }: BatteryCardProps) {
 
   const capacity = getBatteryCapacity(bike);
   const whPerKm = getWhPerKm(bike);
-  const { estimatedPercent } = estimateCurrentCharge(bike);
 
   const cyclePercent = Math.min(
     (battery.chargeCycles.total / ESTIMATED_MAX_CYCLES) * 100,
     100,
   );
   const healthPercent = Math.max(100 - cyclePercent, 0);
+
+  // Find Turbo mode range
+  const turboMode = bike.driveUnit.activeAssistModes
+    .filter((m) => m.reachableRange != null && m.reachableRange > 0)
+    .sort((a, b) => (a.reachableRange ?? 0) - (b.reachableRange ?? 0))[0];
 
   return (
     <Card className="bg-card border-border">
@@ -38,36 +42,39 @@ export function BatteryCard({ bike }: BatteryCardProps) {
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-4">
-        {/* Estimated current charge */}
-        {estimatedPercent != null && (
-          <div className="space-y-2">
-            <div className="flex items-end gap-2">
-              <span className="text-4xl font-bold tabular-nums text-emerald-400">
-                ~{estimatedPercent.toFixed(0)}
+        {/* Turbo range — the reliable number */}
+        {turboMode?.reachableRange != null && (
+          <div className="space-y-1">
+            <p className="text-[11px] text-muted-foreground uppercase tracking-wider">Turbo Range</p>
+            <div className="flex items-end gap-1">
+              <span className="text-4xl font-bold tabular-nums text-red-400">
+                {turboMode.reachableRange}
               </span>
-              <span className="text-lg text-muted-foreground mb-1">%</span>
+              <span className="text-lg text-muted-foreground mb-1">km</span>
             </div>
-            <Progress
-              value={estimatedPercent}
-              className="h-2.5 bg-secondary [&>div]:bg-emerald-500"
-            />
-            <p className="text-[10px] text-muted-foreground">
-              Estimated from current Eco mode reachable range
-            </p>
           </div>
         )}
 
-        {/* Health + stats */}
-        <div className="grid grid-cols-2 gap-x-4 gap-y-2">
-          <div>
-            <p className="text-[11px] text-muted-foreground uppercase tracking-wider">Cycle Health</p>
-            <p className="text-sm font-semibold tabular-nums text-emerald-400">{healthPercent.toFixed(0)}%</p>
+        {/* Battery health */}
+        <div className="space-y-1.5">
+          <div className="flex justify-between text-xs">
+            <span className="text-muted-foreground">Battery Health</span>
+            <span className={`font-semibold ${healthPercent > 90 ? "text-emerald-400" : healthPercent > 70 ? "text-amber-400" : "text-red-400"}`}>
+              {healthPercent.toFixed(0)}%
+            </span>
           </div>
+          <Progress
+            value={healthPercent}
+            className={`h-2.5 bg-secondary ${healthPercent > 90 ? "[&>div]:bg-emerald-500" : healthPercent > 70 ? "[&>div]:bg-amber-500" : "[&>div]:bg-red-500"}`}
+          />
+        </div>
+
+        {/* Stats */}
+        <div className="grid grid-cols-2 gap-x-4 gap-y-2">
           <MetricItem label="Lifetime Energy" value={`${battery.deliveredWhOverLifetime.toLocaleString()} Wh`} color="text-amber-400" />
           <MetricItem label="Total Cycles" value={battery.chargeCycles.total.toFixed(1)} color="text-cyan-400" />
           <MetricItem label="Avg Wh/km" value={whPerKm > 0 ? whPerKm.toFixed(1) : "—"} color="text-blue-400" />
           <MetricItem label="On-Bike" value={String(battery.chargeCycles.onBike)} color="text-purple-400" />
-          <MetricItem label="Off-Bike" value={String(battery.chargeCycles.offBike)} color="text-muted-foreground" />
         </div>
       </CardContent>
     </Card>
