@@ -44,7 +44,10 @@ export function RideSummaryCard({ activities }: RideSummaryCardProps) {
           <span className="text-xs font-normal ml-auto flex items-center gap-3">
             {activities.length} rides
             <Link href="/dashboard/stats" className="text-emerald-400 hover:text-emerald-300 transition-colors font-medium">
-              Detailed stats &rarr;
+              Stats &rarr;
+            </Link>
+            <Link href="/dashboard/insights" className="text-amber-400 hover:text-amber-300 transition-colors font-medium">
+              Insights &rarr;
             </Link>
           </span>
         </CardTitle>

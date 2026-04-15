@@ -50,7 +50,7 @@ export function RecentRides({ activities, detailsMap, bike }: RecentRidesProps) 
         </Link>
       </div>
 
-      <div className="space-y-3">
+      <div className="flex flex-col gap-4">
         {displayActivities.map((activity) => (
           <RideCardWithMap
             key={activity.id}

@@ -2,6 +2,7 @@ import { auth } from "@/auth";
 import { redirect } from "next/navigation";
 import { LoginButton } from "@/components/login-button";
 import { BrandLogo } from "@/components/brand-logo";
+import { ShaderBackground } from "@/components/ui/shaders-hero-section";
 
 export default async function LoginPage() {
   const session = await auth();
@@ -11,63 +12,65 @@ export default async function LoginPage() {
   }
 
   return (
-    <div className="flex flex-1 flex-col items-center justify-center px-4">
-      <div className="w-full max-w-md space-y-8 text-center">
-        {/* Logo / Brand */}
-        <div className="flex flex-col items-center space-y-4">
-          <BrandLogo variant="logo" size={56} />
-          <div className="space-y-2">
-            <h1 className="text-3xl font-bold tracking-tight text-foreground">
-              eBike Dashboard
-            </h1>
-            <p className="text-muted-foreground text-base leading-relaxed">
-              Real-time metrics from your Bosch Smart System
+    <ShaderBackground>
+      <div className="relative z-10 flex flex-1 flex-col items-center justify-center px-4 min-h-screen">
+        <div className="w-full max-w-md space-y-8 text-center">
+          {/* Logo / Brand */}
+          <div className="flex flex-col items-center space-y-4">
+            <BrandLogo variant="logo" size={56} />
+            <div className="space-y-2">
+              <h1 className="text-3xl font-bold tracking-tight text-white">
+                eBike Dashboard
+              </h1>
+              <p className="text-white/60 text-base leading-relaxed">
+                Real-time metrics from your Bosch Smart System
+              </p>
+            </div>
+          </div>
+
+          {/* Login Card */}
+          <div className="rounded-xl border border-white/10 bg-black/40 backdrop-blur-md p-6 space-y-5">
+            <LoginButton />
+
+            <div className="relative">
+              <div className="absolute inset-0 flex items-center">
+                <div className="w-full border-t border-white/10" />
+              </div>
+              <div className="relative flex justify-center text-xs uppercase">
+                <span className="bg-black/40 px-2 text-white/50">
+                  Powered by Bosch SingleKey ID
+                </span>
+              </div>
+            </div>
+
+            <p className="text-xs text-white/50 leading-relaxed">
+              View battery health, odometer, assist modes, and ride history
+              directly from the EU Data Act API.
             </p>
           </div>
-        </div>
 
-        {/* Login Card */}
-        <div className="rounded-xl border border-border bg-card p-6 space-y-5">
-          <LoginButton />
-
-          <div className="relative">
-            <div className="absolute inset-0 flex items-center">
-              <div className="w-full border-t border-border" />
-            </div>
-            <div className="relative flex justify-center text-xs uppercase">
-              <span className="bg-card px-2 text-muted-foreground">
-                Powered by Bosch SingleKey ID
-              </span>
-            </div>
+          {/* Footer links */}
+          <div className="flex items-center justify-center gap-4 text-xs text-white/40">
+            <a
+              href="https://portal.bosch-ebike.com/data-act/app"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="underline underline-offset-2 hover:text-white/70 transition-colors"
+            >
+              Data Act Portal
+            </a>
+            <span className="text-white/20">|</span>
+            <a
+              href="https://flow.bosch-ebike.com"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="underline underline-offset-2 hover:text-white/70 transition-colors"
+            >
+              eBike Flow
+            </a>
           </div>
-
-          <p className="text-xs text-muted-foreground leading-relaxed">
-            View battery health, odometer, assist modes, and ride history
-            directly from the EU Data Act API.
-          </p>
-        </div>
-
-        {/* Footer links */}
-        <div className="flex items-center justify-center gap-4 text-xs text-muted-foreground">
-          <a
-            href="https://portal.bosch-ebike.com/data-act/app"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="underline underline-offset-2 hover:text-foreground transition-colors"
-          >
-            Data Act Portal
-          </a>
-          <span className="text-border">|</span>
-          <a
-            href="https://flow.bosch-ebike.com"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="underline underline-offset-2 hover:text-foreground transition-colors"
-          >
-            eBike Flow
-          </a>
         </div>
       </div>
-    </div>
+    </ShaderBackground>
   );
 }

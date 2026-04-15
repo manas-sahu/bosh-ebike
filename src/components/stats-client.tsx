@@ -1,24 +1,63 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import {
   DistanceChart, SpeedPowerChart, CaloriesChart,
   ElevationChart, BatteryConsumptionChart, DurationChart,
 } from "@/components/stats-charts";
 import {
-  type Period, type PeriodStats, type DailyPoint,
-  computeStats, filterActivities, toDailyPoints, getPeriodRange,
+  type Period,
+  computeStats, toDailyPoints,
 } from "@/lib/stats";
 import { formatDuration } from "@/lib/utils";
+import { PeriodPicker } from "@/components/period-picker";
 import type { BoschActivitySummary, BoschBike } from "@/types/bosch";
 
-const PERIODS: { key: Period; label: string }[] = [
-  { key: "week", label: "This Week" },
-  { key: "month", label: "This Month" },
-  { key: "year", label: "This Year" },
+type ViewMode = "week" | "month" | "year" | "all";
+
+const VIEW_MODES: { key: ViewMode; label: string }[] = [
+  { key: "week", label: "Weekly" },
+  { key: "month", label: "Monthly" },
+  { key: "year", label: "Yearly" },
   { key: "all", label: "All Time" },
 ];
+
+function getOffsetRange(mode: ViewMode, offset: number) {
+  const now = new Date();
+  let start: Date;
+  let end: Date;
+  let label: string;
+
+  if (mode === "week") {
+    const day = now.getDay();
+    const diff = now.getDate() - day + (day === 0 ? -6 : 1); // Monday
+    start = new Date(now.getFullYear(), now.getMonth(), diff + offset * 7);
+    end = new Date(start);
+    end.setDate(start.getDate() + 6);
+    const fmt = (d: Date) => d.toLocaleDateString("en-US", { month: "short", day: "numeric" });
+    label = offset === 0 ? "This Week" : `${fmt(start)} – ${fmt(end)}`;
+  } else if (mode === "month") {
+    start = new Date(now.getFullYear(), now.getMonth() + offset, 1);
+    end = new Date(start.getFullYear(), start.getMonth() + 1, 0);
+    label = offset === 0
+      ? "This Month"
+      : start.toLocaleDateString("en-US", { month: "long", year: "numeric" });
+  } else if (mode === "year") {
+    const y = now.getFullYear() + offset;
+    start = new Date(y, 0, 1);
+    end = new Date(y, 11, 31);
+    label = offset === 0 ? "This Year" : String(y);
+  } else {
+    start = new Date(0);
+    end = new Date(now);
+    label = "All Time";
+  }
+
+  start.setHours(0, 0, 0, 0);
+  end.setHours(23, 59, 59, 999);
+  return { start, end, label };
+}
 
 interface StatsClientProps {
   activities: BoschActivitySummary[];
@@ -26,31 +65,60 @@ interface StatsClientProps {
 }
 
 export function StatsClient({ activities, bike }: StatsClientProps) {
-  const [period, setPeriod] = useState<Period>("month");
+  const [mode, setMode] = useState<ViewMode>("month");
+  const [offset, setOffset] = useState(0);
 
-  const stats = computeStats(activities, period, bike);
-  const filtered = filterActivities(activities, period);
+  // Reset offset when switching modes
+  const handleModeChange = (m: ViewMode) => {
+    setMode(m);
+    setOffset(0);
+  };
+
+  const { start, end, label } = useMemo(() => getOffsetRange(mode, offset), [mode, offset]);
+
+  const filtered = useMemo(
+    () => activities.filter((a) => {
+      const d = new Date(a.startTime);
+      return d >= start && d <= end;
+    }),
+    [activities, start, end],
+  );
+
+  const period: Period = mode === "all" ? "all" : mode;
+  const stats = computeStats(activities, period, bike, start, end);
   const daily = toDailyPoints(filtered, bike);
 
   return (
     <>
-      {/* Period tabs */}
-      <div className="flex items-center gap-1.5 mb-6 bg-secondary/50 rounded-lg p-1 w-fit">
-        {PERIODS.map((p) => (
+      {/* View mode tabs */}
+      <div className="flex items-center gap-1.5 mb-4 bg-secondary/50 rounded-lg p-1 w-fit">
+        {VIEW_MODES.map((v) => (
           <button
-            key={p.key}
+            key={v.key}
             type="button"
-            onClick={() => setPeriod(p.key)}
+            onClick={() => handleModeChange(v.key)}
             className={`px-4 py-2 text-sm font-medium rounded-md cursor-pointer transition-colors ${
-              period === p.key
+              mode === v.key
                 ? "bg-emerald-500 text-white shadow-sm"
                 : "text-muted-foreground hover:text-foreground"
             }`}
           >
-            {p.label}
+            {v.label}
           </button>
         ))}
       </div>
+
+      {/* Period picker */}
+      {mode !== "all" && (
+        <div className="mb-6">
+          <PeriodPicker
+            mode={mode}
+            label={label}
+            offset={offset}
+            onSelect={setOffset}
+          />
+        </div>
+      )}
 
       {/* No data state */}
       {stats.rides === 0 ? (
@@ -75,11 +143,7 @@ export function StatsClient({ activities, bike }: StatsClientProps) {
             <KpiCard label="Peak Power" value={String(stats.maxPowerW)} unit="W" color="text-purple-300" />
             <KpiCard label="Avg Cadence" value={stats.avgCadence.toFixed(0)} unit="rpm" color="text-cyan-300" />
             <KpiCard label="Difficulty" value={stats.avgDifficultyMPerKm.toFixed(1)} unit="m/km" color="text-orange-400" />
-            <KpiCard
-              label="Rides/Day"
-              value={stats.avgRidesPerDay.toFixed(2)}
-              color="text-blue-300"
-            />
+            <KpiCard label="Rides/Day" value={stats.avgRidesPerDay.toFixed(2)} color="text-blue-300" />
             {stats.totalEstimatedWh > 0 && (
               <KpiCard label="Est. Battery Used" value={stats.totalEstimatedWh.toFixed(0)} unit="Wh" color="text-orange-400" />
             )}

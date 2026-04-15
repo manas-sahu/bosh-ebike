@@ -48,6 +48,13 @@ export async function getBikes(accessToken: string): Promise<BoschBike[]> {
   return data.bikes;
 }
 
+export interface PaginatedActivities {
+  activities: BoschActivitySummary[];
+  total: number;
+  limit: number;
+  offset: number;
+}
+
 export async function getRecentActivities(
   accessToken: string,
   limit = 3,
@@ -57,6 +64,23 @@ export async function getRecentActivities(
     accessToken,
   );
   return data.activitySummaries;
+}
+
+export async function getActivitiesPaginated(
+  accessToken: string,
+  limit = 10,
+  offset = 0,
+): Promise<PaginatedActivities> {
+  const data = await boschFetch<BoschActivitiesResponse>(
+    `/activity/smart-system/v1/activities?limit=${limit}&offset=${offset}&sort=-startTime`,
+    accessToken,
+  );
+  return {
+    activities: data.activitySummaries,
+    total: data.pagination.total,
+    limit: data.pagination.limit,
+    offset: data.pagination.offset,
+  };
 }
 
 export async function getActivityDetails(

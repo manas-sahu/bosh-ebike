@@ -5,7 +5,7 @@ import {
   XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend,
   PieChart, Pie, Cell,
 } from "recharts";
-import type { DailyPoint } from "@/lib/stats";
+import type { DailyPoint, FitnessTrendPoint, EfficiencyEntry } from "@/lib/stats";
 
 const COLORS = {
   emerald: "#22c55e",
@@ -129,6 +129,76 @@ export function DurationChart({ data }: ChartProps) {
         </BarChart>
       </ResponsiveContainer>
     </ChartWrapper>
+  );
+}
+
+// --- Fitness Trend Chart ---
+
+export function FitnessTrendChart({ data }: { data: FitnessTrendPoint[] }) {
+  return (
+    <ChartWrapper title="Fitness Trend — Avg Power per Ride" unit="">
+      <ResponsiveContainer width="100%" height={220}>
+        <LineChart data={data} margin={{ top: 4, right: 4, left: -20, bottom: 0 }}>
+          <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" />
+          <XAxis dataKey="date" tickFormatter={shortDate} tick={{ fontSize: 10, fill: "var(--muted-foreground)" }} />
+          <YAxis yAxisId="power" tick={{ fontSize: 10, fill: "var(--muted-foreground)" }} />
+          <YAxis yAxisId="cadence" orientation="right" tick={{ fontSize: 10, fill: "var(--muted-foreground)" }} />
+          <Tooltip content={<FitnessTrendTooltip />} />
+          <Legend wrapperStyle={{ fontSize: 11 }} />
+          <Line yAxisId="power" dataKey="avgPower" stroke={COLORS.purple} strokeWidth={2} dot={{ r: 3 }} name="Power (W)" />
+          <Line yAxisId="cadence" dataKey="avgCadence" stroke={COLORS.cyan} strokeWidth={2} dot={{ r: 3 }} name="Cadence (rpm)" />
+        </LineChart>
+      </ResponsiveContainer>
+    </ChartWrapper>
+  );
+}
+
+function FitnessTrendTooltip({ active, payload, label }: { active?: boolean; payload?: Array<{ value: number; name: string; color: string }>; label?: string }) {
+  if (!active || !payload?.length) return null;
+  const ride = payload[0] as unknown as { payload: FitnessTrendPoint };
+  return (
+    <div className="bg-card border border-border rounded-lg px-3 py-2 shadow-lg text-xs">
+      <p className="text-muted-foreground mb-1">{ride.payload.rideTitle} — {label ? shortDate(label) : ""}</p>
+      {payload.map((p, i) => (
+        <p key={i} style={{ color: p.color }} className="font-semibold">{p.name}: {p.value.toFixed(1)}</p>
+      ))}
+    </div>
+  );
+}
+
+// --- Efficiency Chart ---
+
+export function EfficiencyChart({ data }: { data: EfficiencyEntry[] }) {
+  // Show top 10 entries with bars
+  const top = data.slice(0, 10).map((e) => ({
+    ...e,
+    label: `${e.rideTitle} (${e.rideDate})`,
+  }));
+
+  return (
+    <ChartWrapper title="Most Efficient Rides — Wh/km" unit="">
+      <ResponsiveContainer width="100%" height={220}>
+        <BarChart data={top} layout="vertical" margin={{ top: 4, right: 16, left: 0, bottom: 0 }}>
+          <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" />
+          <XAxis type="number" tick={{ fontSize: 10, fill: "var(--muted-foreground)" }} />
+          <YAxis dataKey="label" type="category" width={140} tick={{ fontSize: 9, fill: "var(--muted-foreground)" }} />
+          <Tooltip content={<EfficiencyTooltip />} />
+          <Bar dataKey="whPerKm" fill={COLORS.emerald} radius={[0, 4, 4, 0]} name="Wh/km" />
+        </BarChart>
+      </ResponsiveContainer>
+    </ChartWrapper>
+  );
+}
+
+function EfficiencyTooltip({ active, payload }: { active?: boolean; payload?: Array<{ payload: EfficiencyEntry & { label: string }; value: number }> }) {
+  if (!active || !payload?.length) return null;
+  const e = payload[0].payload;
+  return (
+    <div className="bg-card border border-border rounded-lg px-3 py-2 shadow-lg text-xs">
+      <p className="font-semibold mb-1">{e.rideTitle} — {e.rideDate}</p>
+      <p><span className="text-emerald-400">{e.whPerKm.toFixed(1)}</span> Wh/km</p>
+      <p className="text-muted-foreground">{e.distanceKm.toFixed(1)} km · {e.estimatedWh.toFixed(0)} Wh</p>
+    </div>
   );
 }
 

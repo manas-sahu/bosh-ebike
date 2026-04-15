@@ -17,8 +17,8 @@ export function RideCardWithMap({ activity, details, bike }: RideCardWithMapProp
   const consumption = bike ? estimateRideConsumption(bike, activity) : null;
 
   return (
-    <Link href={`/dashboard/rides/${activity.id}`}>
-      <Card className="bg-card border-border hover:border-emerald-500/30 transition-colors cursor-pointer">
+    <Link href={`/dashboard/rides/${activity.id}`} className="block">
+      <Card className="bg-card border-border hover:border-emerald-500/30 transition-colors cursor-pointer shadow-sm">
         <CardContent className="py-4">
           <div className="flex gap-4">
             {/* Mini map */}

@@ -1,5 +1,5 @@
 import { getAccessToken } from "@/lib/auth-utils";
-import { getRecentActivities } from "@/lib/bosch-api";
+import { getActivitiesPaginated } from "@/lib/bosch-api";
 import type { NextRequest } from "next/server";
 
 export async function GET(request: NextRequest) {
@@ -9,12 +9,14 @@ export async function GET(request: NextRequest) {
     return Response.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const rawLimit = Number(request.nextUrl.searchParams.get("limit") ?? "3");
-  const limit = Math.min(Math.max(1, rawLimit || 3), 50);
+  const rawLimit = Number(request.nextUrl.searchParams.get("limit") ?? "10");
+  const rawOffset = Number(request.nextUrl.searchParams.get("offset") ?? "0");
+  const limit = Math.min(Math.max(1, rawLimit || 10), 50);
+  const offset = Math.max(0, rawOffset || 0);
 
   try {
-    const activities = await getRecentActivities(accessToken, limit);
-    return Response.json({ activities });
+    const result = await getActivitiesPaginated(accessToken, limit, offset);
+    return Response.json(result);
   } catch (error) {
     const message = error instanceof Error ? error.message : "Unknown error";
     return Response.json({ error: message }, { status: 502 });

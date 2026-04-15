@@ -1,9 +1,9 @@
 import { getAccessToken } from "@/lib/auth-utils";
 import { redirect } from "next/navigation";
 import { getBikes, getRecentActivities } from "@/lib/bosch-api";
-import { StatsClient } from "@/components/stats-client";
+import { InsightsClient } from "@/components/insights-client";
 
-export default async function StatsPage() {
+export default async function InsightsPage() {
   const accessToken = await getAccessToken();
   if (!accessToken) redirect("/login");
 
@@ -16,14 +16,14 @@ export default async function StatsPage() {
 
   return (
     <>
-      <div className="flex items-center justify-between pb-4">
-        <div>
-          <h1 className="text-xl font-semibold tracking-tight">Statistics</h1>
-          <p className="text-xs text-muted-foreground">{activities.length} total rides</p>
-        </div>
+      <div className="pb-4">
+        <h1 className="text-xl font-semibold tracking-tight">Insights</h1>
+        <p className="text-xs text-muted-foreground">
+          All-time records, fitness trends &amp; battery intelligence
+        </p>
       </div>
 
-      <StatsClient activities={activities} bike={bike} />
+      <InsightsClient activities={activities} bike={bike} />
     </>
   );
 }

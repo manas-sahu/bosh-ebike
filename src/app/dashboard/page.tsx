@@ -2,7 +2,6 @@ import { Suspense } from "react";
 import { redirect } from "next/navigation";
 import { getAccessToken } from "@/lib/auth-utils";
 import { getBikes, getRecentActivities, getActivityDetails } from "@/lib/bosch-api";
-import { DashboardHeader } from "@/components/dashboard-header";
 import { BikeInfoCard } from "@/components/bike-info-card";
 import { BatteryCard } from "@/components/battery-card";
 import { OdometerCard } from "@/components/odometer-card";
@@ -33,15 +32,12 @@ async function DashboardContent() {
 
   if (!bike) {
     return (
-      <>
-        <DashboardHeader />
-        <div className="text-center py-12">
-          <p className="text-muted-foreground">
-            No eBikes found. Make sure your bike is registered in the Bosch Flow
-            app and data sharing is enabled.
-          </p>
-        </div>
-      </>
+      <div className="text-center py-12">
+        <p className="text-muted-foreground">
+          No eBikes found. Make sure your bike is registered in the Bosch Flow
+          app and data sharing is enabled.
+        </p>
+      </div>
     );
   }
 
@@ -60,7 +56,6 @@ async function DashboardContent() {
 
   return (
     <>
-      <DashboardHeader />
       <div className="mb-6">
         <BikeInfoCard bike={bike} />
       </div>

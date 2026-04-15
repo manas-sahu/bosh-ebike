@@ -87,7 +87,7 @@ export function RidesListClient({ activities, detailsMap, bike }: RidesListClien
       </div>
 
       {/* Rides */}
-      <div className="space-y-3">
+      <div className="flex flex-col gap-4">
         {sorted.map((activity) => (
           <RideCardWithMap
             key={activity.id}

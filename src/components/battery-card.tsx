@@ -52,7 +52,7 @@ export function BatteryCard({ bike }: BatteryCardProps) {
               className="h-2.5 bg-secondary [&>div]:bg-emerald-500"
             />
             <p className="text-[10px] text-muted-foreground">
-              Estimated charge based on range &amp; avg consumption ({whPerKm.toFixed(1)} Wh/km)
+              Estimated from current Eco mode reachable range
             </p>
           </div>
         )}

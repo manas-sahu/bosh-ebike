@@ -95,29 +95,58 @@ export function estimateRideConsumption(
   return { estimatedWh, estimatedPercent, whPerKm };
 }
 
-/** Estimate remaining battery based on reachable range (from assist modes) */
+/**
+ * Typical Eco-mode efficiency for Bosch eBike drive units (Wh/km).
+ * Bosch Eco provides ~60% motor assist — the most efficient mode.
+ *
+ * Calibrated against real data (Performance Line CX + PowerTube 800):
+ *   - 100% charge → Eco range ~134 km → 800 / 134 = 5.97 Wh/km
+ *   - 83% charge (664 Wh) → Eco range 111 km → 664 / 111 = 5.98 Wh/km
+ *
+ * This value may vary ±1 Wh/km depending on terrain and riding style.
+ * Bosch already personalises the range estimate to the rider's pattern,
+ * so using 6.0 gives a good universal default.
+ */
+const ECO_WH_PER_KM = 6.0;
+
+/**
+ * Estimate remaining battery % from the live reachable-range values.
+ *
+ * Bosch updates `reachableRange` per assist mode based on current battery
+ * level, riding history, and conditions. The highest-range mode (Eco) gives
+ * the most granular signal.
+ *
+ * Formula:
+ *   fullChargeRange = capacity / ECO_WH_PER_KM
+ *   currentPercent  = (currentEcoRange / fullChargeRange) × 100
+ *
+ * Accuracy: within ~1% for Performance Line CX + PowerTube 800.
+ */
 export function estimateCurrentCharge(bike: BoschBike): {
   estimatedPercent: number | null;
   basedOn: string;
 } {
-  const whPerKm = getWhPerKm(bike);
-  if (whPerKm <= 0) return { estimatedPercent: null, basedOn: "" };
-
   const capacity = getBatteryCapacity(bike);
-  // Use the highest-range mode (sorted by range descending, skip "Off")
+
+  // Use the highest-range mode (Eco) — most efficient, best granularity
   const modes = bike.driveUnit.activeAssistModes
     .filter((m) => m.reachableRange != null && m.reachableRange > 0)
     .sort((a, b) => (b.reachableRange ?? 0) - (a.reachableRange ?? 0));
 
-  const ecoMode = modes[0];
-  if (!ecoMode?.reachableRange) return { estimatedPercent: null, basedOn: "" };
+  const bestMode = modes[0];
+  if (!bestMode?.reachableRange) return { estimatedPercent: null, basedOn: "" };
 
-  // reachableRange * whPerKm = estimated Wh remaining
-  const estimatedWhRemaining = ecoMode.reachableRange * whPerKm;
-  const estimatedPercent = Math.min((estimatedWhRemaining / capacity) * 100, 100);
+  // Theoretical full-charge range for the most efficient mode
+  const fullChargeRange = capacity / ECO_WH_PER_KM;
+
+  // Current battery % = current range / full-charge range
+  const estimatedPercent = Math.min(
+    (bestMode.reachableRange / fullChargeRange) * 100,
+    100,
+  );
 
   return {
     estimatedPercent,
-    basedOn: ecoMode.name,
+    basedOn: bestMode.name,
   };
 }

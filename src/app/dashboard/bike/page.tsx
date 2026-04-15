@@ -28,13 +28,7 @@ export default async function BikePage() {
   return (
     <>
       <div className="pb-6">
-        <Link
-          href="/dashboard"
-          className="text-xs text-muted-foreground hover:text-foreground transition-colors"
-        >
-          &larr; Back to Dashboard
-        </Link>
-        <h1 className="text-2xl font-bold tracking-tight mt-2">eBike Details</h1>
+        <h1 className="text-2xl font-bold tracking-tight">eBike Details</h1>
       </div>
 
       {/* Hero image */}
